@@ -8,8 +8,8 @@
 //!
 //! If you set `#mh(alloc_size = …)` to a too low value, you will get compiler errors. Please note
 //! the the sizes are checked only on a syntactic level and *not* on the type level. This means
-//! that digest need to have a size generic, which is a valid `typenum`, for example `U32` or
-//! `generic_array::typenum::U64`.
+//! that digest need to have a size const generic, which is a valid `usize`, for example `32` or
+//! `64`.
 //!
 //! You can disable those compiler errors with setting the `no_alloc_size_errors` attribute. This
 //! can be useful if you e.g. have specified type aliases for your hash digests and you are sure
@@ -19,14 +19,14 @@
 //!
 //! ```
 //! use multihash::derive::Multihash;
-//! use multihash::{MultihashDigest, U32, U64};
+//! use multihash::MultihashDigest;
 //!
 //! #[derive(Clone, Copy, Debug, Eq, Multihash, PartialEq)]
-//! #[mh(alloc_size = U64)]
+//! #[mh(alloc_size = 64)]
 //! pub enum Code {
-//!     #[mh(code = 0x01, hasher = multihash::Sha2_256, digest = multihash::Sha2Digest<U32>)]
+//!     #[mh(code = 0x01, hasher = multihash::Sha2_256, digest = multihash::Sha2Digest<32>)]
 //!     Foo,
-//!     #[mh(code = 0x02, hasher = multihash::Sha2_512, digest = multihash::Sha2Digest<U64>)]
+//!     #[mh(code = 0x02, hasher = multihash::Sha2_512, digest = multihash::Sha2Digest<64>)]
 //!     Bar,
 //! }
 //!

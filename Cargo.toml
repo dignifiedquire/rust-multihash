@@ -21,7 +21,7 @@ derive = ["multihash-derive"]
 arb = ["quickcheck", "rand"]
 secure-hashes = ["blake2b", "blake2s", "blake3", "sha2", "sha3"]
 scale-codec = ["parity-scale-codec"]
-serde-codec = ["serde", "generic-array/serde"]
+serde-codec = ["serde", "serde-big-array"]
 
 blake2b = ["blake2b_simd"]
 blake2s = ["blake2s_simd"]
@@ -32,13 +32,13 @@ sha3 = ["digest", "sha-3"]
 strobe = ["strobe-rs"]
 
 [dependencies]
-generic-array = "0.14.4"
 parity-scale-codec = { version = "2.1.1", default-features = false, features = ["derive"], optional = true }
 quickcheck = { version = "0.9.2", optional = true }
 rand = { version = "0.7.3", optional = true }
-serde = { version = "1.0.116", default-features = false, features = ["derive"], optional = true }
-multihash-derive = { version = "0.7.2", path = "derive", default-features = false, optional = true }
-unsigned-varint = { version = "0.7.0", default-features = false }
+serde = { version = "1.0.116", optional = true, default-features = false, features = ["derive"] }
+serde-big-array = { version = "0.3.2", optional = true, features = ["const-generics"] }
+multihash-derive = { version = "^0.7.1", path = "derive", default-features = false, optional = true }
+unsigned-varint = "0.7.0"
 
 blake2b_simd = { version = "0.5.10", default-features = false, optional = true }
 blake2s_simd = { version = "0.5.10", default-features = false, optional = true }

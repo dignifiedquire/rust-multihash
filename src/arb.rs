@@ -4,10 +4,10 @@ use rand::{
     Rng,
 };
 
-use crate::{MultihashGeneric, U64};
+use crate::MultihashGeneric;
 
 /// Generates a random valid multihash.
-impl Arbitrary for MultihashGeneric<U64> {
+impl Arbitrary for MultihashGeneric<64> {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         // In real world lower multihash codes are more likely to happen, hence distribute them
         // with bias towards smaller values.

@@ -1,25 +1,12 @@
 use crate::error::Error;
 use core::fmt::Debug;
-use generic_array::typenum::marker_traits::Unsigned;
-use generic_array::{ArrayLength, GenericArray};
-
-/// Size marker trait.
-pub trait Size:
-    ArrayLength<u8> + Debug + Default + Eq + core::hash::Hash + Send + Sync + 'static
-{
-}
-
-impl<T: ArrayLength<u8> + Debug + Default + Eq + core::hash::Hash + Send + Sync + 'static> Size
-    for T
-{
-}
 
 /// Stack allocated digest trait.
-pub trait Digest<S: Size>:
+pub trait Digest<const S: usize>:
     AsRef<[u8]>
     + AsMut<[u8]>
-    + From<GenericArray<u8, S>>
-    + Into<GenericArray<u8, S>>
+    + From<[u8; S]>
+    + Into<[u8; S]>
     + Clone
     + core::hash::Hash
     + Debug
@@ -29,17 +16,15 @@ pub trait Digest<S: Size>:
     + Sync
     + 'static
 {
-    /// Size of the digest.
-    fn size(&self) -> u8 {
-        S::to_u8()
-    }
+    /// Size of the digest. Maximum for Some of the Blake family is 2^64-1 bytes
+    const SIZE: usize = S;
 
     /// Wraps the digest bytes.
     fn wrap(digest: &[u8]) -> Result<Self, Error> {
-        if digest.len() != S::to_usize() {
+        if digest.len() != S {
             return Err(Error::InvalidSize(digest.len() as _));
         }
-        let mut array = GenericArray::default();
+        let mut array = [0; S];
         let len = digest.len().min(array.len());
         array[..len].copy_from_slice(&digest[..len]);
         Ok(array.into())
@@ -56,22 +41,19 @@ pub trait Digest<S: Size>:
         use unsigned_varint::io::read_u64;
 
         let size = read_u64(&mut r)?;
-        if size > S::to_u64() || size > u8::max_value() as u64 {
+        if size > S as u64 || size > u8::MAX as u64 {
             return Err(Error::InvalidSize(size));
         }
-        let mut digest = GenericArray::default();
+        let mut digest = [0; S];
         r.read_exact(&mut digest[..size as usize])?;
         Ok(Self::from(digest))
     }
 }
 
 /// Trait implemented by a hash function implementation.
-pub trait StatefulHasher: Default + Send + Sync {
-    /// The maximum Digest size for that hasher (it is stack allocated).
-    type Size: Size;
-
+pub trait StatefulHasher<const S: usize>: Default + Send + Sync {
     /// The Digest type to distinguish the output of different `Hasher` implementations.
-    type Digest: Digest<Self::Size>;
+    type Digest: Digest<S>;
 
     /// Consume input and update internal state.
     fn update(&mut self, input: &[u8]);
@@ -106,17 +88,12 @@ pub trait StatefulHasher: Default + Send + Sync {
 /// [Multihashes]: https://github.com/multiformats/multihash
 /// [associated type]: https://doc.rust-lang.org/book/ch19-03-advanced-traits.html#specifying-placeholder-types-in-trait-definitions-with-associated-types
 /// [`MultihashDigest`]: crate::MultihashDigest
-pub trait Hasher: Default + Send + Sync {
-    /// The maximum Digest size for that hasher (it is stack allocated).
-    type Size: Size;
-
+pub trait Hasher<const S: usize>: Default + Send + Sync {
     /// The Digest type to distinguish the output of different `Hasher` implementations.
-    type Digest: Digest<Self::Size>;
+    type Digest: Digest<S>;
 
-    /// Returns the allocated size of the digest.
-    fn size() -> u8 {
-        Self::Size::to_u8()
-    }
+    ///the allocated size of the digest.
+    const SIZE: usize = S;
 
     /// Hashes the given `input` data and returns its hash digest.
     fn digest(input: &[u8]) -> Self::Digest
@@ -124,8 +101,7 @@ pub trait Hasher: Default + Send + Sync {
         Self: Sized;
 }
 
-impl<T: StatefulHasher> Hasher for T {
-    type Size = T::Size;
+impl<T: StatefulHasher<S>, const S: usize> Hasher<S> for T {
     type Digest = T::Digest;
 
     fn digest(input: &[u8]) -> Self::Digest {
